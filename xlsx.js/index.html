@@ -21,6 +21,9 @@
                         <input type="checkbox" ng-model="showPreview">Show preview of excel file
                     </label>
                 </div>
+                <div ng-show="isProcessing">
+                    <span>Processing ...</span>
+                </div>
 
                 <div class='form-group'>
                     <label for='sheet_name'>Sheet Name</label>
@@ -88,17 +91,21 @@ app.controller('PreviewController', function($scope, XLSXReaderService) {
     $scope.showPreview = false;
 
     $scope.fileChanged = function(files) {
+        $scope.isProcessing = true;
         $scope.sheets = [];
         $scope.excelFile = files[0];
         XLSXReaderService.readFile($scope.excelFile, $scope.showPreview).then(function(xlsxData) {
             $scope.sheets = xlsxData.sheets;
+            $scope.isProcessing = false;
         });
     };
 
     $scope.showPreviewChanged = function() {
         if ($scope.showPreview) {
+            $scope.isProcessing = true;
             XLSXReaderService.readFile($scope.excelFile, $scope.showPreview).then(function(xlsxData) {
                 $scope.sheets = xlsxData.sheets;
+                $scope.isProcessing = false;
             });
         };
     };
