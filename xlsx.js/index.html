@@ -1,0 +1,108 @@
+
+<html>
+
+<head>
+    <title>XLSXReader + AngularJS Demo</title>
+    <link rel="stylesheet" type="text/css" href="//netdna.bootstrapcdn.com/bootstrap/3.0.3/css/bootstrap.min.css">
+</head>
+
+<body>
+    <div ng-app='App'>
+        <div class="" ng-controller="PreviewController">
+            <h4>XLSX Reader demo</h4>
+            <form action="" method="post" enctype="multipart/form-data">
+                <div class='form-group'>
+                    <label for='excel_file'>Excel File</label>
+                    <input type="file" name="excel_file" accept=".xlsx" onchange="angular.element(this).scope().fileChanged(this.files);" required="true">
+                </div>
+
+                <div class="checkbox">
+                    <label>
+                        <input type="checkbox" ng-model="showPreview">Show preview of excel file
+                    </label>
+                </div>
+
+                <div class='form-group'>
+                    <label for='sheet_name'>Sheet Name</label>
+                    <select id="sheet_name" class="form-control" ng-model="selectedSheetName" required="true" ng-required="true" ng-options="sheetName as sheetName for (sheetName, sheetData) in sheets">
+                        <option value="">---- Select a sheet ----</option>
+                    </select>
+                </div>
+
+                <input type="hidden" name="sheet_name" value="{{ selectedSheetName }}">
+
+                <input type="submit" value="Submit">
+
+                <div ng-show="showPreview">
+                    <table class="table table-bordered" ng-repeat="(sheetName, sheetData) in sheets" ng-show="sheetName == selectedSheetName">
+                        <thead>
+                            <tr>
+                                <th ng-bind="sheetName"></th>
+                            </tr>
+                        </thead>
+                        <tr ng-repeat="row in sheetData.data">
+                            <td ng-repeat="col in row" ng-bind="col"></td>
+                        </tr>
+                    </table>
+                </div>
+            </form>
+        </div>
+    </div>
+
+</body>
+<script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/angularjs/1.0.7/angular.min.js"></script>
+<script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+<script type="text/javascript" src="//netdna.bootstrapcdn.com/bootstrap/3.0.3/js/bootstrap.min.js"></script>
+
+<script type="text/javascript">
+var app = angular.module("App", []);
+
+app.factory("XLSXReaderService", ['$q', '$rootScope',
+    function($q, $rootScope) {
+        var service = function(data) {
+            angular.extend(this, data);
+        };
+
+        service.readFile = function(file, showPreview) {
+            var worker = new Worker('js/xlsx-reader-worker.js');
+            var deferred = $q.defer();
+
+            worker.addEventListener('message', function(e) {
+                var data = e.data;
+                // console.log('Worker said: ', data);
+                $rootScope.$apply(function() {
+                    deferred.resolve(data);
+                });
+            }, false);
+
+            worker.postMessage(file); // Send data to our worker.
+
+            return deferred.promise;
+        };
+
+        return service;
+    }
+]);
+
+app.controller('PreviewController', function($scope, XLSXReaderService) {
+    $scope.showPreview = false;
+
+    $scope.fileChanged = function(files) {
+        $scope.sheets = [];
+        $scope.excelFile = files[0];
+        XLSXReaderService.readFile($scope.excelFile, $scope.showPreview).then(function(xlsxData) {
+            $scope.sheets = xlsxData.sheets;
+        });
+    };
+
+    $scope.showPreviewChanged = function() {
+        if ($scope.showPreview) {
+            XLSXReaderService.readFile($scope.excelFile, $scope.showPreview).then(function(xlsxData) {
+                $scope.sheets = xlsxData.sheets;
+            });
+        };
+    };
+});
+</script>
+
+</html>
