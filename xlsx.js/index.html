@@ -55,6 +55,10 @@
 <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/angularjs/1.0.7/angular.min.js"></script>
 <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
 <script type="text/javascript" src="//netdna.bootstrapcdn.com/bootstrap/3.0.3/js/bootstrap.min.js"></script>
+<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/lodash.js/2.4.1/lodash.min.js"></script>
+<script type="text/javascript" src="js/jszip.js"></script>
+<script type="text/javascript" src="js/xlsx.js"></script>
+<script type="text/javascript" src="js/xlsx-reader.js"></script>
 
 <script type="text/javascript">
 var app = angular.module("App", []);
@@ -66,21 +70,17 @@ app.factory("XLSXReaderService", ['$q', '$rootScope',
         };
 
         service.readFile = function(file, showPreview) {
-            var worker = new Worker('js/xlsx-reader-worker.js');
             var deferred = $q.defer();
 
-            worker.addEventListener('message', function(e) {
-                var data = e.data;
-                // console.log('Worker said: ', data);
+            XLSXReader(file, showPreview, function(data) {
                 $rootScope.$apply(function() {
                     deferred.resolve(data);
                 });
-            }, false);
-
-            worker.postMessage(file); // Send data to our worker.
+            });
 
             return deferred.promise;
         };
+
 
         return service;
     }
