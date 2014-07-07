@@ -1,0 +1,3 @@
+[submodule "ckeditor-padma"]
+	path = ckeditor-padma
+	url = git@github.com:psjinx/ckeditor-padma.git
