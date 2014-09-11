@@ -22,11 +22,11 @@
 
 
     // Create a safe reference to the XLSXReader object for use below.
-    var XLSXReader = function(file, readCells, handler) {
+    var XLSXReader = function(file, readCells, toJSON, handler) {
         var obj = {};
-        XLSXReader.utils.intializeFromFile(obj, file, readCells, handler);
+        XLSXReader.utils.intializeFromFile(obj, file, readCells, toJSON, handler);
         return obj;
-    };
+    }
 
     // Export the XLSXReader object for **Node.js**, with
     // backwards-compatibility for the old `require()` API. If we're in
@@ -45,7 +45,7 @@
     XLSXReader.VERSION = '0.0.1';
 
     XLSXReader.utils = {
-        'intializeFromFile': function(obj, file, readCells, handler) {
+        'intializeFromFile': function(obj, file, readCells, toJSON, handler) {
             var reader = new FileReader();
 
             reader.onload = function(e) {
@@ -54,13 +54,17 @@
                     type: 'binary'
                 });
 
-                obj.sheets = XLSXReader.utils.parseWorkbook(workbook, readCells);
+                obj.sheets = XLSXReader.utils.parseWorkbook(workbook, readCells, toJSON);
                 handler(obj);
-            };
+            }
 
             reader.readAsBinaryString(file);
         },
-        'parseWorkbook': function(workbook, readCells) {
+        'parseWorkbook': function(workbook, readCells, toJSON) {
+            if (toJSON === true) {
+                return XLSXReader.utils.to_json(workbook);
+            }
+
             var sheets = {};
 
             _.forEachRight(workbook.SheetNames, function(sheetName) {
@@ -87,14 +91,24 @@
                     });
                     sheetData[row] = rowData;
                 });
-            };
+            }
 
             return {
                 'data': sheetData,
                 'name': sheet.name,
                 'col_size': range.e.c + 1,
                 'row_size': range.e.r + 1
-            };
+            }
+        },
+        to_json: function(workbook) {
+            var result = {};
+            workbook.SheetNames.forEach(function(sheetName) {
+                var roa = XLSX.utils.sheet_to_row_object_array(workbook.Sheets[sheetName]);
+                if (roa.length > 0) {
+                    result[sheetName] = roa;
+                }
+            });
+            return result;
         }
-    };
+    }
 }).call(this);
