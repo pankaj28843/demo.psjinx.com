@@ -3,6 +3,7 @@
 <head>
     <title>XLSXReader + AngularJS Demo</title>
     <link rel="stylesheet" type="text/css" href="//netdna.bootstrapcdn.com/bootstrap/3.0.3/css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="//cdnjs.cloudflare.com/ajax/libs/prism/0.0.1/prism.min.css">
 </head>
 
 <body>
@@ -20,13 +21,18 @@
                         <input type="checkbox" ng-model="showPreview" ng-change="showPreviewChanged();">Show preview of excel file
                     </label>
                 </div>
+                 <div class="checkbox">
+                    <label>
+                        <input type="checkbox" ng-model="showJSONPreview">Show JSON preview of selected sheet
+                    </label>
+                </div>
                 <div ng-show="isProcessing">
                     <span>Processing ...</span>
                 </div>
 
                 <div class='form-group'>
                     <label for='sheet_name'>Sheet Name</label>
-                    <select id="sheet_name" class="form-control" ng-model="selectedSheetName" required="true" ng-required="true" ng-options="sheetName as sheetName for (sheetName, sheetData) in sheets">
+                    <select id="sheet_name" class="form-control" ng-change="updateJSONString()" ng-model="selectedSheetName" required="true" ng-required="true" ng-options="sheetName as sheetName for (sheetName, sheetData) in sheets">
                         <option value="">---- Select a sheet ----</option>
                     </select>
                 </div>
@@ -35,6 +41,10 @@
 
                 <input type="submit" value="Submit">
 
+                <div ng-show="showJSONPreview">
+                  <h4>JSON Preview of selected sheet</h4>
+                  <pre class="langauge-javascript"><code>{{ json_string }}</code></pre>
+                  </div>
                 <div ng-show="showPreview">
                     <table class="table table-bordered" ng-repeat="(sheetName, sheetData) in sheets" ng-show="sheetName == selectedSheetName">
                         <thead>
@@ -84,25 +94,29 @@ app.factory("XLSXReaderService", ['$q', '$rootScope',
 
         return service;
     }
-]);
+ ]);
 
 app.controller('PreviewController', function($scope, XLSXReaderService) {
-    $scope.showPreview = false;
+  $scope.showPreview = false;
+  $scope.json_string = "";
 
     $scope.fileChanged = function(files) {
         $scope.isProcessing = true;
         $scope.sheets = [];
         $scope.excelFile = files[0];
-        XLSXReaderService.readFile($scope.excelFile, $scope.showPreview).then(function(xlsxData) {
+        XLSXReaderService.readFile($scope.excelFile, true).then(function(xlsxData) {
             $scope.sheets = xlsxData.sheets;
             $scope.isProcessing = false;
         });
     };
 
+  $scope.updateJSONString = function() {
+    $scope.json_string = JSON.stringify($scope.sheets[$scope.selectedSheetName], null, 2);
+  }
     $scope.showPreviewChanged = function() {
         if ($scope.showPreview) {
             $scope.isProcessing = true;
-            XLSXReaderService.readFile($scope.excelFile, $scope.showPreview).then(function(xlsxData) {
+            XLSXReaderService.readFile($scope.excelFile, true).then(function(xlsxData) {
                 $scope.sheets = xlsxData.sheets;
                 $scope.isProcessing = false;
             });
@@ -110,5 +124,4 @@ app.controller('PreviewController', function($scope, XLSXReaderService) {
     };
 });
 </script>
-
 </html>
