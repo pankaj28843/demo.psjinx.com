@@ -58,7 +58,11 @@
                 handler(obj);
             }
 
-            reader.readAsBinaryString(file);
+            var rABS = typeof FileReader !== "undefined" && typeof FileReader.prototype !== "undefined" && typeof FileReader.prototype.readAsBinaryString !== "undefined";
+            if (rABS) 
+                reader.readAsBinaryString(file);
+            else 
+                reader.readAsArrayBuffer(file);                
         },
         'parseWorkbook': function(workbook, readCells, toJSON) {
             if (toJSON === true) {
